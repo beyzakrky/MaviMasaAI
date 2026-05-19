@@ -40,6 +40,7 @@ export default function SikayetGirScreen({ navigation }) {
   };
 
   const sikayet_gonder = async () => {
+    const API_URL = 'http://172.20.10.3:8000/api/v1/process-complaint';
     if (!form.sikayet_turu) return Alert.alert('Eksik', 'Lütfen şikayet türü seçin.');
     if (!form.aciklama || form.aciklama.length < 10) return Alert.alert('Eksik', 'Açıklama en az 10 karakter olmalı.');
     if (!form.ilce) return Alert.alert('Eksik', 'Lütfen ilçe seçin.');

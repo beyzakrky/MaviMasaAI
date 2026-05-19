@@ -30,17 +30,17 @@ export default function SikayetlerScreen({ navigation }) {
     setYenileniyor(false);
   };
 
-  useEffect(() => {
-    verileriGetir();
-
-    // Gerçek zamanlı güncellemeler — yeni şikayet gelince otomatik yansır
-    const kanal = supabase
-      .channel('sikayetler-kanal')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sikayetler' }, verileriGetir)
-      .subscribe();
-
-    return () => supabase.removeChannel(kanal);
-  }, []);
+useEffect(() => {
+  const verileriGetir = async () => {
+    let { data, error } = await supabase.from('sikayetler').select('*');
+    if (error) console.log("Hata:", error);
+    else {
+      console.log("Gelen Veriler:", data); 
+      setSikayetler(data);
+    }
+  };
+  verileriGetir();
+}, []);
 
   const filtreliSikayetler = filtre === 'Tümü'
     ? sikayetler

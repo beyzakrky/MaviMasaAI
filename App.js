@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Text } from 'react-native';
 
 import SikayetlerScreen from './src/screens/SikayetlerScreen';
-import HaritaScreen from './src/screens/HaritaScreen';
+// HaritaScreen importu geçici olarak kaldırıldı
 import SikayetGirScreen from './src/screens/SikayetGirScreen';
 
 const Tab = createBottomTabNavigator();
@@ -31,11 +31,9 @@ export default function App() {
           component={SikayetlerScreen}
           options={{ tabBarIcon: () => <Text style={{ fontSize: 20 }}>📋</Text> }}
         />
-        <Tab.Screen
-          name="Harita"
-          component={HaritaScreen}
-          options={{ tabBarIcon: () => <Text style={{ fontSize: 20 }}>🗺️</Text> }}
-        />
+        
+        {/* Harita sekmesi web demosu için gizlendi */}
+
         <Tab.Screen
           name="Şikayet Gir"
           component={SikayetGirScreen}
