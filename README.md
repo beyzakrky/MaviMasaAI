@@ -1,36 +1,129 @@
-"🏛️ Mavi Masa AI"
+# 🏙️ Ankara Belediyesi Akıllı Şikayet Sistemi
 
-Belediye Akıllı Şikayet Triaj ve Yönlendirme Sistemi 
+Vatandaşların belediyeye şikayetlerini kolayca iletebileceği, yapay zeka destekli mobil uygulama.
 
-Mavi Masa AI, belediyelere gelen vatandaş şikayetlerini doğal dil işleme (NLP) ile anlayan, aciliyet sırasına koyan, konumlandıran ve doğru birime otomatik yönlendiren Agentic (Otonom Ajan) tabanlı bir yapay zeka asistanıdır.
+---
 
-BTK 2026 Hackathon kapsamında geliştirilmiştir.
+## 📱 Özellikler
 
-"🚀 Neden Mavi Masa AI? (Problem ve Çözüm)"
+- Şikayet listesi — öncelik filtreli, gerçek zamanlı güncelleme
+- Harita görünümü — tüm şikayetler haritada pinlenir
+- Şikayet gir — kategori seçimi, konum otomatik alınır
+- Detay ekranı — süreç takibi, AI analiz notu
+- Supabase entegrasyonu — gerçek zamanlı veritabanı
 
-Büyükşehir belediyelerinde her gün binlerce çağrı ve mesaj manuel olarak operatörler tarafından okunup ilgili birimlere atanmaya çalışılmaktadır. Bu durum "ambulans/göçük" gibi acil durumların önemsiz şikayetlerin arkasında beklemesine ve kronikleşen bölgesel sorunların (aynı çukuru 50 kişinin şikayet etmesi) gözden kaçmasına neden olmaktadır.
+---
 
-Çözümümüz: Gelen metni saniyeler içinde analiz eden, aciliyet skoru (1-10) üreten ve LangGraph destekli 4 farklı otonom ajan ile süreci uçtan uca yöneten akıllı bir sistem.
+## 🗄️ Supabase Tablo Yapısı (Backend için)
 
-"✨ Temel Özellikler (İnovasyon Noktaları)"
-🧠 Agentic Mimari (LangGraph): Şikayetler tek bir model yerine; Anlama, Konumlandırma, Kümeleme ve Yönlendirme görevlerinde uzmanlaşmış bir ajan zincirinden geçer.
+Arkadaşın Supabase'de şu tabloyu oluşturmalı:
 
-🚨 Dinamik Aciliyet Skoru: "Sokak lambası yanmıyor" (Skor: 2) ile "Kanalizasyon patladı" (Skor: 9) şikayetleri ayrıştırılarak birimlere öncelik sırasıyla iletilir.
+```sql
+CREATE TABLE sikayetler (
+  id SERIAL PRIMARY KEY,
+  sikayet_turu TEXT NOT NULL,
+  aciklama TEXT NOT NULL,
+  ilce TEXT NOT NULL,
+  mahalle TEXT,
+  enlem DECIMAL(10, 7),
+  boylam DECIMAL(10, 7),
+  oncelik TEXT DEFAULT 'Beklemede',
+  durum TEXT DEFAULT 'Inceleniyor',
+  birim TEXT,
+  tahmini_sure TEXT,
+  ai_notu TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-🗺️ Akıllı Kümeleme Motoru (pgvector): Şikayetler HuggingFace modelleriyle vektör uzayına dönüştürülür. Kosinüs benzerliği algoritmaları kullanılarak "Bu mahallede aynı çukuru 47 kişi daha şikayet etti" tespiti yapılır ve belediyeye bölgesel kriz haritası sunulur.
+-- Realtime aktif et
+ALTER PUBLICATION supabase_realtime ADD TABLE sikayetler;
+```
 
-"🛠️ Teknoloji Yığını (Tech Stack)"
-Zeka Çekirdeği (Backend)
-* Çerçeve: FastAPI, Python
+---
 
-* LLM Motoru: Google Gemini 2.5 Flash (Hız ve yapılandırılmış veri analizi için)
+## ⚙️ Kurulum
 
-* Vektör Modeli: HuggingFace all-MiniLM-L6-v2 (Yerel, yüksek performanslı embedding)
+### 1. Repo'yu klonla
+```bash
+git clone https://github.com/KULLANICI_ADI/ankara-sikayet.git
+cd ankara-sikayet
+```
 
-* Orkestrasyon: LangGraph
+### 2. Bağımlılıkları yükle
+```bash
+npm install
+```
 
-Veri 
-* Veritabanı: Supabase (PostgreSQL) + pgvector eklentisi
+### 3. Supabase bilgilerini gir
+`src/lib/supabase.js` dosyasını aç:
+```js
+const SUPABASE_URL = 'https://SENIN_URL.supabase.co';
+const SUPABASE_ANON_KEY = 'SENIN_ANON_KEY';
+```
 
+Bu bilgileri Supabase Dashboard → Settings → API bölümünden alabilirsin.
 
+### 4. Uygulamayı başlat
+```bash
+npx expo start
+```
 
+Telefonuna **Expo Go** uygulamasını indir, QR kodu okut — uygulama telefonunda açılır.
+
+---
+
+## 🤖 AI Entegrasyonu (Backend Görevi)
+
+Vatandaş şikayet gönderdiğinde backend şunları yapmalı:
+
+1. `sikayetler` tablosunda yeni satır eklenmesini dinle (Supabase Realtime veya webhook)
+2. `aciklama` alanını AI'ya gönder
+3. AI'dan dönen sonuçla şu alanları güncelle:
+   - `oncelik`: "Acil" / "Orta" / "Dusuk"
+   - `birim`: "Su ve Kanalizasyon" / "Elektrik İşleri" vb.
+   - `tahmini_sure`: "24 saat" / "72 saat" vb.
+   - `ai_notu`: AI'ın açıklama metni
+
+Örnek AI prompt:
+```
+Aşağıdaki belediye şikayetini analiz et:
+"{aciklama}"
+
+JSON formatında döndür:
+{
+  "oncelik": "Acil | Orta | Dusuk",
+  "birim": "ilgili belediye birimi adı",
+  "tahmini_sure": "kaç saat/gün",
+  "ai_notu": "kısa analiz açıklaması"
+}
+```
+
+---
+
+## 🛠️ Teknoloji Stack
+
+| Katman | Teknoloji |
+|--------|-----------|
+| Mobil | React Native (Expo) |
+| Veritabanı | Supabase (PostgreSQL) |
+| Harita | React Native Maps |
+| Konum | Expo Location |
+| Gerçek zamanlı | Supabase Realtime |
+
+---
+
+## 📂 Dosya Yapısı
+
+```
+ankara-sikayet/
+├── App.js                          # Ana navigasyon
+├── app.json                        # Expo konfigürasyon
+├── src/
+│   ├── lib/
+│   │   └── supabase.js            # Supabase bağlantısı
+│   └── screens/
+│       ├── SikayetlerScreen.js    # Liste ekranı
+│       ├── HaritaScreen.js        # Harita ekranı
+│       ├── SikayetGirScreen.js    # Form ekranı
+│       └── DetayScreen.js         # Detay ekranı
+```
